@@ -13,7 +13,6 @@ var graphView;
 var navBar;
 var dashboardName;
 var dashboardURL;
-var refreshTask;
 var spacer;
 var justClosedGraph = false;
 var NOT_EDITABLE = ['from', 'until', 'width', 'height', 'target', 'uniq', '_uniq'];
@@ -636,49 +635,6 @@ function initDashboard () {
     handler: refreshGraphs
   };
 
-  var autoRefreshButton = {
-    xtype: 'button',
-    id: 'auto-refresh-button',
-    text: "Auto-Refresh",
-    enableToggle: true,
-    pressed: false,
-    tooltip: "Toggle auto-refresh",
-    toggleHandler: function (button, pressed) {
-                     if (pressed) {
-                       startTask(refreshTask);
-                     } else {
-                       stopTask(refreshTask);
-                     }
-                   }
-  };
-
-  var every = {
-    xtype: 'tbtext',
-    text: 'every'
-  };
-
-  var seconds = {
-    xtype: 'tbtext',
-    text: 'seconds'
-  };
-
-  var autoRefreshField = {
-    id: 'auto-refresh-field',
-    xtype: 'textfield',
-    width: 25,
-    value: UI_CONFIG.refresh_interval,
-    enableKeyEvents: true,
-    disableKeyFilter: true,
-    listeners: {
-      change: function (field, newValue) { updateAutoRefresh(newValue); },
-      specialkey: function (field, e) {
-                    if (e.getKey() == e.ENTER) {
-                      updateAutoRefresh( field.getValue() );
-                    }
-                  }
-    }
-  };
-
   var lastRefreshed = {
     xtype: 'tbtext',
     text: 'Last Refreshed: '
@@ -712,8 +668,6 @@ function initDashboard () {
         resizeButton,
         removeAllButton,
         refreshButton,
-        autoRefreshButton,
-        every, autoRefreshField, seconds,
         '-',
         lastRefreshed, lastRefreshedText
       ]
@@ -733,11 +687,6 @@ function initDashboard () {
       graphArea
     ]
   });
-
-  refreshTask = {
-    run: refreshGraphs,
-    interval: UI_CONFIG.refresh_interval * 1000
-  };
 
   // Load initial dashboard state if it was passed in
   if (initialState) {
@@ -1061,23 +1010,6 @@ function refreshGraph(index) {
   //graphView.refresh();
 }
 */
-
-function updateAutoRefresh (newValue) {
-  Ext.getCmp('auto-refresh-field').setValue(newValue);
-
-  var value = parseInt(newValue);
-  if ( isNaN(value) ) {
-    return;
-  }
-
-  if (Ext.getCmp('auto-refresh-button').pressed) {
-    stopTask(refreshTask);
-    refreshTask.interval = value * 1000;
-    startTask(refreshTask);
-  } else {
-    refreshTask.interval = value * 1000;
-  }
-}
 
 /* Task management */
 function stopTask(task) {
@@ -2378,10 +2310,6 @@ function getState() {
   return {
     name: dashboardName,
     timeConfig: TimeRange,
-    refreshConfig: {
-      enabled: Ext.getCmp('auto-refresh-button').pressed,
-      interval: refreshTask.interval
-    },
     graphSize: GraphSize,
     defaultGraphParams: defaultGraphParams,
     graphs: graphs
@@ -2405,19 +2333,6 @@ function applyState(state) {
   updateTimeText();
 
 
-
-  //state.refreshConfig = {enabled, interval}
-  var refreshConfig = state.refreshConfig;
-  if (refreshConfig.enabled) {
-    stopTask(refreshTask);
-    startTask(refreshTask);
-    Ext.getCmp('auto-refresh-button').toggle(true);
-  } else {
-    stopTask(refreshTask);
-    Ext.getCmp('auto-refresh-button').toggle(false);
-  }
-  //refreshTask.interval = refreshConfig.interval;
-  updateAutoRefresh(refreshConfig.interval / 1000);
 
   //state.graphSize = {width, height}
   var graphSize = state.graphSize;
